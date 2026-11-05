@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+.ruff_cache/
+backups/
+*.log
+.venv/
+
+.runtime/

@@ -1,0 +1,39 @@
+# Telegram webhook uchun reverse-proxy. SSL sertifikat: certbot (README ga qarang).
+upstream bot_upstream {
+    server bot:8080;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name ${DOMAIN};
+    location /.well-known/acme-challenge/ { root /var/www/acme; }
+    location / { return 301 https://$host$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    client_max_body_size 2m;
+
+    location = ${WEBHOOK_PATH} {
+        # Faqat Telegram serverlari
+        allow 149.154.160.0/20;
+        allow 91.108.4.0/22;
+        deny all;
+
+        proxy_pass http://bot_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_read_timeout 30s;
+    }
+
+    location / { return 404; }
+}
